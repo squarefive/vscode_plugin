@@ -10,21 +10,23 @@ This project is a local Visual Studio Code extension for Markdown document trans
 ## Functional Scope And Completeness
 | Feature | Status | Notes |
 | --- | --- | --- |
-| VS Code extension shell | not-started | Local VS Code plugin for Markdown translation preview workflows. |
-| Non-Chinese Markdown detection | not-started | Detects whether Markdown content should be translated to Chinese. |
-| Translation preview entry point | not-started | Provides a preview action for eligible Markdown documents. |
-| LLM translation integration | not-started | Calls an LLM to translate Markdown content into Chinese. |
-| Translation cache | not-started | Avoids repeated LLM calls for already translated, unchanged documents. |
-| Markdown structure preservation | not-started | Keeps Markdown formatting, code blocks, links, and document structure usable after translation. |
+| VS Code extension shell | implemented | TypeScript extension manifest, activation entry, commands, menu contributions, and Extension Host launch config are present. |
+| Non-Chinese Markdown detection | implemented | Detects mostly Chinese Markdown after ignoring protected code blocks. |
+| Translation preview entry point | implemented | Provides command palette, Markdown editor title, and Markdown context menu commands. |
+| LLM translation integration | implemented | Calls an OpenAI-compatible chat completions endpoint through configured `baseUrl`, `apiKey`, and `model`. |
+| Translation cache | implemented | Stores translated Markdown outside the workspace under VS Code extension storage. |
+| Markdown structure preservation | partial | Protects code blocks, splits by headings/paragraphs, and prompts the LLM to preserve Markdown, links, images, and anchors. |
 
 ## Module Map
 | Module | Responsibility | Main Files | Notes |
 | --- | --- | --- | --- |
-| Extension activation | Register commands, providers, and VS Code contribution points. | _Not provided._ | Planned VS Code extension entry module. |
-| Markdown language detection | Decide whether a Markdown document is non-Chinese. | _Not provided._ | Implementation details not yet provided. |
-| Translation service | Call the configured LLM provider and manage prompts/chunking. | _Not provided._ | Provider details not yet provided. |
-| Translation cache | Store and retrieve translated Markdown by content and configuration identity. | _Not provided._ | Cache storage mechanism not yet provided. |
-| Preview integration | Present translated Markdown in VS Code preview flow. | _Not provided._ | Exact VS Code API approach not yet implemented. |
+| Extension activation | Register commands, providers, and VS Code contribution points. | `src/extension.ts` | Uses `withProgress` and cancellation for preview translation. |
+| Configuration | Read and validate VS Code settings for the translation provider. | `src/config/readExtensionTranslationConfig.ts` | Uses OpenAI-compatible settings. |
+| Markdown language detection | Decide whether a Markdown document is already mostly Chinese. | `src/language/isMarkdownDocumentUri.ts`, `src/language/isMarkdownMostlyChinese.ts` | Ignores protected code blocks for language detection. |
+| Markdown structure handling | Protect code blocks, split sections, and rebuild translated Markdown. | `src/markdown/protectMarkdownCodeBlocks.ts`, `src/markdown/splitMarkdownIntoTranslatableSections.ts`, `src/markdown/rebuildMarkdownFromTranslatedSections.ts` | Splits primarily by headings and oversized paragraphs. |
+| Translation service | Call the configured LLM provider and manage prompts/chunking. | `src/llm/callOpenAICompatibleChatCompletion.ts`, `src/translation/translateMarkdownSectionToChinese.ts`, `src/translation/translateMarkdownDocumentToChinese.ts` | No provider-specific SDK dependency. |
+| Translation cache | Store and retrieve translated Markdown by content and configuration identity. | `src/cache/createTranslationCacheKey.ts`, `src/cache/readCachedMarkdownTranslation.ts`, `src/cache/writeCachedMarkdownTranslation.ts`, `src/cache/deleteCachedMarkdownTranslations.ts` | Cache path is based on `context.globalStorageUri`. |
+| Preview integration | Present translated Markdown in VS Code preview flow. | `src/preview/registerTranslatedMarkdownDocumentProvider.ts`, `src/preview/openTranslatedMarkdownPreview.ts` | Uses `translated-md://translation-preview/<cacheKey>.md` virtual documents. |
 
 ## Project-Specific Agent Rules
 - Treat the extension as a local VS Code plugin for Markdown translation preview.

@@ -1,0 +1,117 @@
+{
+  "name": "markdown-chinese-preview-translator",
+  "displayName": "Markdown Chinese Preview Translator",
+  "description": "Preview non-Chinese Markdown documents as Simplified Chinese using an OpenAI-compatible LLM.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:mdTranslate.previewChinese",
+    "onCommand:mdTranslate.clearCache",
+    "onCommand:mdTranslate.clearCurrentFileCache"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mdTranslate.previewChinese",
+        "title": "Preview Markdown Translation in Chinese",
+        "category": "Markdown Translate"
+      },
+      {
+        "command": "mdTranslate.clearCache",
+        "title": "Clear All Markdown Translation Cache",
+        "category": "Markdown Translate"
+      },
+      {
+        "command": "mdTranslate.clearCurrentFileCache",
+        "title": "Clear Current Markdown Translation Cache",
+        "category": "Markdown Translate"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "mdTranslate.previewChinese",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "mdTranslate.previewChinese",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "mdTranslate.previewChinese",
+          "when": "resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown Translate",
+      "properties": {
+        "mdTranslate.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI-compatible API base URL, for example https://api.example.com/v1."
+        },
+        "mdTranslate.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for the OpenAI-compatible translation provider."
+        },
+        "mdTranslate.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model name used for Markdown translation."
+        },
+        "mdTranslate.targetLanguage": {
+          "type": "string",
+          "default": "简体中文",
+          "description": "Target language for Markdown translation."
+        },
+        "mdTranslate.maxSectionChars": {
+          "type": "number",
+          "default": 6000,
+          "minimum": 1000,
+          "description": "Maximum Markdown characters per translation section before paragraph splitting."
+        },
+        "mdTranslate.enableCache": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable translation cache stored in the VS Code extension storage directory."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs && tsc",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run compile && node ./scripts/run-unit-tests.cjs",
+    "test:extension": "npm run compile && node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.28.1",
+    "mocha": "^11.7.6",
+    "typescript": "^5.8.0"
+  },
+  "overrides": {
+    "diff": "^9.0.0",
+    "serialize-javascript": "^7.0.5"
+  }
+}
