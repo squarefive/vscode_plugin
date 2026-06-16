@@ -62,8 +62,8 @@
       "properties": {
         "mdTranslate.baseUrl": {
           "type": "string",
-          "default": "",
-          "description": "OpenAI-compatible API base URL, for example https://api.example.com/v1."
+          "default": "https://api.deepseek.com",
+          "description": "OpenAI-compatible API base URL. DeepSeek uses https://api.deepseek.com."
         },
         "mdTranslate.apiKey": {
           "type": "string",
@@ -72,8 +72,8 @@
         },
         "mdTranslate.model": {
           "type": "string",
-          "default": "",
-          "description": "Model name used for Markdown translation."
+          "default": "deepseek-v4-flash",
+          "description": "Model name used for Markdown translation. DeepSeek supports deepseek-v4-flash and deepseek-v4-pro."
         },
         "mdTranslate.targetLanguage": {
           "type": "string",

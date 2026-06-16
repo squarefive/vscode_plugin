@@ -3,6 +3,7 @@ dist/
 out/
 coverage/
 .vscode-test/
+.vscode/settings.json
 *.vsix
 *.log
 .env

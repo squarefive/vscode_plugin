@@ -32,9 +32,9 @@ A local Visual Studio Code extension that helps preview non-Chinese Markdown doc
 
    ```json
    {
-     "mdTranslate.baseUrl": "https://api.example.com/v1",
+     "mdTranslate.baseUrl": "https://api.deepseek.com",
      "mdTranslate.apiKey": "your-api-key",
-     "mdTranslate.model": "your-model",
+     "mdTranslate.model": "deepseek-v4-flash",
      "mdTranslate.targetLanguage": "简体中文",
      "mdTranslate.maxSectionChars": 6000,
      "mdTranslate.enableCache": true
