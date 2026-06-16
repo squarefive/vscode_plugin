@@ -7,7 +7,8 @@ async function runExtensionTests(): Promise<void> {
 
   await runTests({
     extensionDevelopmentPath,
-    extensionTestsPath
+    extensionTestsPath,
+    launchArgs: [extensionDevelopmentPath]
   });
 }
 

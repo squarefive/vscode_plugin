@@ -11,7 +11,12 @@ export async function run(): Promise<void> {
   const testsRoot = __dirname;
   const testFiles = fs
     .readdirSync(testsRoot)
-    .filter((fileName) => fileName.endsWith('.test.js'));
+    .filter((fileName) => fileName.endsWith('.test.js'))
+    .filter(
+      (fileName) =>
+        process.env.MD_TRANSLATE_MANUAL_DEEPSEEK_PREVIEW === '1' ||
+        fileName !== 'manualDeepSeekPreview.test.js'
+    );
 
   for (const testFile of testFiles) {
     mocha.addFile(path.resolve(testsRoot, testFile));
