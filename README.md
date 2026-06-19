@@ -78,3 +78,46 @@ After installation, reload or reopen VS Code and configure `mdTranslate.*` setti
 Translation cache is stored under the VS Code extension `globalStorageUri` directory, not in the workspace, so normal translation preview usage does not affect Git status.
 
 Translation flow logs are stored under the same extension storage directory as `markdown-translate.log`. Logs include cache, chunking, LLM request timing, and preview timing, but do not include API keys, full Markdown source, prompts, or full model responses.
+
+
+## Manual Real Translation Test
+The real LLM integration test reads an actual Markdown file, calls the configured provider, writes the translated Markdown to disk, and opens the result in the Extension Host.
+
+This test is intentionally excluded from default runs. It does not run under `npm test`, and `npm run test:extension` only includes it when `MD_TRANSLATE_MANUAL_REAL_TRANSLATION=1` is set.
+
+Run it explicitly:
+
+```bash
+MD_TRANSLATE_MANUAL_REAL_TRANSLATION=1 \
+MD_TRANSLATE_MANUAL_SOURCE_FILE=/absolute/path/to/file.md \
+MD_TRANSLATE_API_KEY=your-api-key \
+npm run test:extension
+```
+
+If `MD_TRANSLATE_MANUAL_SOURCE_FILE` is omitted, the test uses `README.md` from the opened workspace. The API key can come from either `MD_TRANSLATE_API_KEY` or the `mdTranslate.apiKey` VS Code setting.
+
+Optional environment overrides:
+
+```text
+MD_TRANSLATE_BASE_URL
+MD_TRANSLATE_MODEL
+MD_TRANSLATE_TARGET_LANGUAGE
+MD_TRANSLATE_MAX_SECTION_CHARS
+MD_TRANSLATE_ENABLE_CACHE
+MD_TRANSLATE_MANUAL_STORAGE_DIR
+```
+
+By default, the manual storage directory is:
+
+```text
+/tmp/markdown-chinese-preview-translator-manual
+```
+
+Generated files:
+
+```text
+manual-translation-result.md
+markdown-translate.log
+```
+
+Set `MD_TRANSLATE_MANUAL_STORAGE_DIR` to write those files somewhere else.
