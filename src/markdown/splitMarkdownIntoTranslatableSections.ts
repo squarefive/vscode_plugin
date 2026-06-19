@@ -7,72 +7,85 @@ export function splitMarkdownIntoTranslatableSections(
   markdown: string,
   maxSectionChars: number
 ): TranslatableMarkdownSection[] {
-  const headingMatches = Array.from(markdown.matchAll(/^#{1,6}\s+.+$/gm));
-  const rawSections: string[] = [];
-
-  if (headingMatches.length === 0) {
-    rawSections.push(markdown);
-  } else {
-    const firstHeadingIndex = headingMatches[0].index ?? 0;
-
-    if (firstHeadingIndex > 0) {
-      rawSections.push(markdown.slice(0, firstHeadingIndex));
-    }
-
-    for (let matchIndex = 0; matchIndex < headingMatches.length; matchIndex += 1) {
-      const sectionStart = headingMatches[matchIndex].index ?? 0;
-      const nextSectionStart = headingMatches[matchIndex + 1]?.index ?? markdown.length;
-      rawSections.push(markdown.slice(sectionStart, nextSectionStart));
-    }
+  if (markdown.length <= maxSectionChars) {
+    return createIndexedSections([markdown]);
   }
 
-  return rawSections
-    .flatMap((section) => splitOversizedMarkdownSection(section, maxSectionChars))
+  const topLevelSections = splitMarkdownByTopLevelHeadings(markdown);
+
+  if (topLevelSections.length <= 1) {
+    return createIndexedSections([markdown]);
+  }
+
+  return createIndexedSections(combineMarkdownSectionsIntoBalancedChunks(topLevelSections, 3));
+}
+
+function splitMarkdownByTopLevelHeadings(markdown: string): string[] {
+  const topLevelHeadingMatches = Array.from(markdown.matchAll(/^#\s+.+$/gm));
+
+  if (topLevelHeadingMatches.length === 0) {
+    return [markdown];
+  }
+
+  return topLevelHeadingMatches.map((match, matchIndex) => {
+    const sectionStart = matchIndex === 0 ? 0 : match.index ?? 0;
+    const nextSectionStart = topLevelHeadingMatches[matchIndex + 1]?.index ?? markdown.length;
+
+    return markdown.slice(sectionStart, nextSectionStart);
+  });
+}
+
+function combineMarkdownSectionsIntoBalancedChunks(sections: string[], maxChunkCount: number): string[] {
+  const chunkCount = Math.min(maxChunkCount, sections.length);
+  const targetChunkChars = sections.reduce((total, section) => total + section.length, 0) / chunkCount;
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
+    const section = sections[sectionIndex] ?? '';
+    const remainingSections = sections.length - sectionIndex;
+    const remainingChunks = chunkCount - chunks.length;
+    const shouldReserveSectionForLaterChunk =
+      remainingChunks > 1 && remainingSections === remainingChunks && currentChunk.length > 0;
+    const candidateChunk = currentChunk + section;
+
+    if (
+      shouldReserveSectionForLaterChunk ||
+      shouldStartNextBalancedChunk(currentChunk, candidateChunk, targetChunkChars, remainingChunks)
+    ) {
+      chunks.push(currentChunk);
+      currentChunk = section;
+      continue;
+    }
+
+    currentChunk = candidateChunk;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+function shouldStartNextBalancedChunk(
+  currentChunk: string,
+  candidateChunk: string,
+  targetChunkChars: number,
+  remainingChunks: number
+): boolean {
+  if (currentChunk.length === 0 || remainingChunks <= 1 || candidateChunk.length <= targetChunkChars) {
+    return false;
+  }
+
+  return Math.abs(targetChunkChars - currentChunk.length) <= Math.abs(targetChunkChars - candidateChunk.length);
+}
+
+function createIndexedSections(markdownSections: string[]): TranslatableMarkdownSection[] {
+  return markdownSections
     .filter((section) => section.length > 0)
     .map((section, index) => ({
       index,
       markdown: section
     }));
-}
-
-export function splitOversizedMarkdownSection(sectionMarkdown: string, maxSectionChars: number): string[] {
-  if (sectionMarkdown.length <= maxSectionChars) {
-    return [sectionMarkdown];
-  }
-
-  const paragraphParts = sectionMarkdown.split(/(\r?\n\s*\r?\n)/);
-  const paragraphs: string[] = [];
-
-  for (let index = 0; index < paragraphParts.length; index += 1) {
-    const paragraphText = paragraphParts[index] ?? '';
-    const paragraphSeparator = paragraphParts[index + 1] ?? '';
-
-    if (paragraphText.length === 0 && paragraphSeparator.length === 0) {
-      continue;
-    }
-
-    paragraphs.push(paragraphText + paragraphSeparator);
-
-    if (paragraphSeparator.length > 0) {
-      index += 1;
-    }
-  }
-
-  const sections: string[] = [];
-  let currentSection = '';
-
-  for (const paragraph of paragraphs) {
-    if (currentSection.length > 0 && currentSection.length + paragraph.length > maxSectionChars) {
-      sections.push(currentSection);
-      currentSection = paragraph;
-    } else {
-      currentSection += paragraph;
-    }
-  }
-
-  if (currentSection.length > 0) {
-    sections.push(currentSection);
-  }
-
-  return sections.length > 0 ? sections : [sectionMarkdown];
 }

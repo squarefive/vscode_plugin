@@ -1,5 +1,6 @@
 import { ExtensionTranslationConfig } from '../config/readExtensionTranslationConfig';
 import { callOpenAICompatibleChatCompletion } from '../llm/callOpenAICompatibleChatCompletion';
+import { MarkdownTranslationLogger } from '../logging/MarkdownTranslationFileLogger';
 
 export function buildMarkdownTranslationPrompt(targetLanguage: string): string {
   return [
@@ -15,7 +16,8 @@ export function buildMarkdownTranslationPrompt(targetLanguage: string): string {
 export async function translateMarkdownSectionToChinese(
   sectionMarkdown: string,
   config: ExtensionTranslationConfig,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  logger?: MarkdownTranslationLogger
 ): Promise<string> {
   return callOpenAICompatibleChatCompletion(
     config,
@@ -29,6 +31,7 @@ export async function translateMarkdownSectionToChinese(
         content: sectionMarkdown
       }
     ],
-    abortSignal
+    abortSignal,
+    logger
   );
 }

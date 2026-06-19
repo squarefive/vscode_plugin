@@ -4,6 +4,7 @@
   "description": "Preview non-Chinese Markdown documents as Simplified Chinese using an OpenAI-compatible LLM.",
   "version": "0.0.1",
   "publisher": "local",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -21,7 +22,11 @@
       {
         "command": "mdTranslate.previewChinese",
         "title": "Preview Markdown Translation in Chinese",
-        "category": "Markdown Translate"
+        "category": "Markdown Translate",
+        "icon": {
+          "light": "assets/translate-preview-light.svg",
+          "dark": "assets/translate-preview-dark.svg"
+        }
       },
       {
         "command": "mdTranslate.clearCache",
@@ -82,9 +87,9 @@
         },
         "mdTranslate.maxSectionChars": {
           "type": "number",
-          "default": 6000,
+          "default": 30000,
           "minimum": 1000,
-          "description": "Maximum Markdown characters per translation section before paragraph splitting."
+          "description": "Maximum Markdown characters before splitting translation requests."
         },
         "mdTranslate.enableCache": {
           "type": "boolean",
@@ -95,17 +100,20 @@
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "node esbuild.mjs && tsc",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit",
     "test": "npm run compile && node ./scripts/run-unit-tests.cjs",
-    "test:extension": "npm run compile && node ./out/test/runTest.js"
+    "test:extension": "npm run compile && node ./out/test/runTest.js",
+    "package:vsix": "vsce package --allow-missing-repository --no-rewrite-relative-links"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.0",
     "@types/vscode": "^1.100.0",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
     "mocha": "^11.7.6",
     "typescript": "^5.8.0"
