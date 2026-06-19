@@ -62,4 +62,72 @@ suite('Markdown translation orchestration', () => {
     assert.equal(translated.usedCache, true);
     assert.equal(translationCallCount, 0);
   });
+
+  test('preserves Markdown chunk order when concurrent section translations resolve out of order', async () => {
+    const pendingTranslations: Array<{
+      sectionMarkdown: string;
+      resolveTranslation: (translatedMarkdown: string) => void;
+    }> = [];
+    const translationPromise = translateMarkdownDocumentToChinese({
+      sourceMarkdown: [
+        '# One',
+        'First section. '.repeat(50),
+        '',
+        '# Two',
+        'Second section. '.repeat(50),
+        '',
+        '# Three',
+        'Third section. '.repeat(50)
+      ].join('\n'),
+      sourceUriText: 'file:///docs/readme.md',
+      config: {
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'secret',
+        model: 'example-model',
+        targetLanguage: '简体中文',
+        maxSectionChars: 1000,
+        enableCache: false
+      },
+      readCachedTranslation: async () => undefined,
+      writeCachedTranslation: async () => undefined,
+      translateMarkdownSection: async (sectionMarkdown) =>
+        new Promise<string>((resolveTranslation) => {
+          pendingTranslations.push({ sectionMarkdown, resolveTranslation });
+        })
+    });
+
+    await waitForPendingTranslations(pendingTranslations, 3);
+
+    pendingTranslations[2]?.resolveTranslation('# 三\n第三段。');
+    pendingTranslations[0]?.resolveTranslation('# 一\n第一段。');
+    pendingTranslations[1]?.resolveTranslation('# 二\n第二段。');
+
+    const translated = await translationPromise;
+
+    assert.deepEqual(
+      pendingTranslations.map((pendingTranslation) => pendingTranslation.sectionMarkdown.split('\n')[0]),
+      ['# One', '# Two', '# Three']
+    );
+    assert.equal(translated.translatedMarkdown, '# 一\n第一段。\n\n# 二\n第二段。\n\n# 三\n第三段。');
+  });
 });
+
+async function waitForPendingTranslations(
+  pendingTranslations: Array<{
+    sectionMarkdown: string;
+    resolveTranslation: (translatedMarkdown: string) => void;
+  }>,
+  expectedCount: number
+): Promise<void> {
+  let attemptCount = 0;
+
+  while (pendingTranslations.length < expectedCount) {
+    attemptCount += 1;
+
+    if (attemptCount > 20) {
+      throw new Error(`Expected ${expectedCount} pending translations, got ${pendingTranslations.length}.`);
+    }
+
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+}

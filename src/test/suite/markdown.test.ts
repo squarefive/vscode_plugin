@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import { protectMarkdownCodeBlocks } from '../../markdown/protectMarkdownCodeBlocks';
-import {
-  splitMarkdownIntoTranslatableSections,
-  splitOversizedMarkdownSection
-} from '../../markdown/splitMarkdownIntoTranslatableSections';
+import { splitMarkdownIntoTranslatableSections } from '../../markdown/splitMarkdownIntoTranslatableSections';
 import { rebuildMarkdownFromTranslatedSections } from '../../markdown/rebuildMarkdownFromTranslatedSections';
 
 suite('Markdown section handling', () => {
@@ -19,33 +16,69 @@ suite('Markdown section handling', () => {
     );
   });
 
-  test('splits Markdown into heading-oriented sections', () => {
+  test('keeps Markdown as one translation chunk when it is under the size boundary', () => {
     const markdown = ['Intro', '', '## Install', 'Install text.', '', '## Usage', 'Usage text.'].join('\n');
 
     const sections = splitMarkdownIntoTranslatableSections(markdown, 6000);
 
+    assert.deepEqual(sections.map((section) => section.markdown), [markdown]);
+  });
+
+  test('splits oversized Markdown only on level-one headings', () => {
+    const markdown = [
+      '# Install',
+      'Install text.',
+      '',
+      '## Usage',
+      'Usage text.',
+      '',
+      '# Reference',
+      'Reference text.'
+    ].join('\n');
+
+    const sections = splitMarkdownIntoTranslatableSections(markdown, 10);
+
+    assert.equal(sections.length, 2);
+    assert.equal(sections[0]?.markdown, '# Install\nInstall text.\n\n## Usage\nUsage text.\n\n');
+    assert.equal(sections[1]?.markdown, '# Reference\nReference text.');
+  });
+
+  test('combines level-one sections into at most three balanced chunks', () => {
+    const markdown = [
+      createTopLevelSection('One', 'a'),
+      createTopLevelSection('Two', 'b'),
+      createTopLevelSection('Three', 'c'),
+      createTopLevelSection('Four', 'd'),
+      createTopLevelSection('Five', 'e'),
+      createTopLevelSection('Six', 'f')
+    ].join('');
+
+    const sections = splitMarkdownIntoTranslatableSections(markdown, 10);
+
     assert.deepEqual(
-      sections.map((section) => section.markdown),
-      ['Intro\n\n', '## Install\nInstall text.\n\n', '## Usage\nUsage text.']
+      sections.map((section) => section.markdown.match(/^#\s+/gm)?.length),
+      [2, 2, 2]
     );
   });
 
-  test('splits oversized sections by paragraph boundaries', () => {
-    const section = ['## Long', '', 'First paragraph has enough text.', '', 'Second paragraph has enough text.'].join('\n');
+  test('keeps oversized Markdown without level-one headings as one translation chunk', () => {
+    const markdown = ['Intro', '', '## Install', 'Install text.', '', '## Usage', 'Usage text.'].join('\n');
 
-    const sections = splitOversizedMarkdownSection(section, 45);
+    const sections = splitMarkdownIntoTranslatableSections(markdown, 10);
 
-    assert.equal(sections.length, 2);
-    assert.equal(sections[0], '## Long\n\nFirst paragraph has enough text.\n\n');
-    assert.equal(sections[1], 'Second paragraph has enough text.');
+    assert.deepEqual(sections.map((section) => section.markdown), [markdown]);
   });
 
   test('rebuilds Markdown from translated sections in original order', () => {
-    const markdown = ['# Title', 'Hello.', '', '## Next', 'World.'].join('\n');
-    const sections = splitMarkdownIntoTranslatableSections(markdown, 6000);
+    const markdown = ['# Title', 'Hello.', '', '# Next', 'World.'].join('\n');
+    const sections = splitMarkdownIntoTranslatableSections(markdown, 10);
 
     const rebuilt = rebuildMarkdownFromTranslatedSections(sections, ['# 标题\n你好。', '## 下一个\n世界。']);
 
     assert.equal(rebuilt, '# 标题\n你好。\n\n## 下一个\n世界。');
   });
 });
+
+function createTopLevelSection(title: string, repeatedCharacter: string): string {
+  return [`# ${title}`, repeatedCharacter.repeat(20), ''].join('\n');
+}

@@ -4,15 +4,18 @@ import { readCachedMarkdownTranslation } from './cache/readCachedMarkdownTransla
 import { writeCachedMarkdownTranslation } from './cache/writeCachedMarkdownTranslation';
 import { readExtensionTranslationConfig } from './config/readExtensionTranslationConfig';
 import { isMarkdownDocumentUri } from './language/isMarkdownDocumentUri';
+import { MarkdownTranslationFileLogger } from './logging/MarkdownTranslationFileLogger';
 import { openTranslatedMarkdownPreview } from './preview/openTranslatedMarkdownPreview';
 import { registerTranslatedMarkdownDocumentProvider } from './preview/registerTranslatedMarkdownDocumentProvider';
 import { translateMarkdownDocumentToChinese } from './translation/translateMarkdownDocumentToChinese';
 
 export function activate(context: vscode.ExtensionContext): void {
+  const logger = new MarkdownTranslationFileLogger(context.globalStorageUri);
+
   context.subscriptions.push(registerTranslatedMarkdownDocumentProvider(context));
   context.subscriptions.push(
     vscode.commands.registerCommand('mdTranslate.previewChinese', async (resourceUri?: vscode.Uri) => {
-      await previewActiveMarkdownDocumentInChinese(context, resourceUri);
+      await previewActiveMarkdownDocumentInChinese(context, resourceUri, logger);
     })
   );
   context.subscriptions.push(
@@ -45,8 +48,10 @@ export function deactivate(): void {
 
 async function previewActiveMarkdownDocumentInChinese(
   context: vscode.ExtensionContext,
-  resourceUri: vscode.Uri | undefined
+  resourceUri: vscode.Uri | undefined,
+  logger: MarkdownTranslationFileLogger
 ): Promise<void> {
+  const commandStartMs = Date.now();
   const sourceDocument = await resolveMarkdownDocumentToTranslate(resourceUri);
 
   if (!sourceDocument) {
@@ -54,9 +59,16 @@ async function previewActiveMarkdownDocumentInChinese(
     return;
   }
 
+  const sourceMarkdown = sourceDocument.getText();
   const abortController = new AbortController();
 
   try {
+    const config = readExtensionTranslationConfig();
+    await logger.info(`command.start source=${sourceDocument.uri.toString()} chars=${sourceMarkdown.length}`);
+    await logger.info(
+      `config baseUrl=${config.baseUrl} model=${config.model} target=${config.targetLanguage} maxSectionChars=${config.maxSectionChars} cache=${config.enableCache}`
+    );
+
     const result = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -68,13 +80,14 @@ async function previewActiveMarkdownDocumentInChinese(
 
         try {
           return await translateMarkdownDocumentToChinese({
-            sourceMarkdown: sourceDocument.getText(),
+            sourceMarkdown,
             sourceUriText: sourceDocument.uri.toString(),
-            config: readExtensionTranslationConfig(),
+            config,
             readCachedTranslation: (cacheKey) => readCachedMarkdownTranslation(context.globalStorageUri, cacheKey),
             writeCachedTranslation: (cacheKey, cachedTranslation) =>
               writeCachedMarkdownTranslation(context.globalStorageUri, cacheKey, cachedTranslation),
-            abortSignal: abortController.signal
+            abortSignal: abortController.signal,
+            logger
           });
         } finally {
           cancellationDisposable.dispose();
@@ -82,11 +95,20 @@ async function previewActiveMarkdownDocumentInChinese(
       }
     );
 
+    const previewStartMs = Date.now();
+    await logger.info('preview.open.start');
     await openTranslatedMarkdownPreview(result.cacheKey);
+    await logger.info(`preview.open.end ms=${Date.now() - previewStartMs}`);
+    await logger.info(`command.end usedCache=${result.usedCache} ms=${Date.now() - commandStartMs}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    await logger.error(`command.error message=${sanitizeLogValue(message)} ms=${Date.now() - commandStartMs}`);
     vscode.window.showErrorMessage(message);
   }
+}
+
+function sanitizeLogValue(value: string): string {
+  return value.replace(/\s+/g, ' ');
 }
 
 async function resolveMarkdownDocumentToTranslate(resourceUri: vscode.Uri | undefined): Promise<vscode.TextDocument | undefined> {
