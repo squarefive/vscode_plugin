@@ -1,7 +1,21 @@
 import assert from 'node:assert/strict';
-import { translateMarkdownDocumentToChinese } from '../../translation/translateMarkdownDocumentToChinese';
+import {
+  markdownTranslationPromptVersion,
+  translateMarkdownDocumentToChinese
+} from '../../translation/translateMarkdownDocumentToChinese';
+import { buildMarkdownTranslationPrompt } from '../../translation/translateMarkdownSectionToChinese';
 
 suite('Markdown translation orchestration', () => {
+  test('uses the v2 technical documentation prompt version', () => {
+    const prompt = buildMarkdownTranslationPrompt('简体中文');
+
+    assert.equal(markdownTranslationPromptVersion, 'v2');
+    assert.match(prompt, /professional technical documentation translator/);
+    assert.match(prompt, /Keep product names, API names, command names, file paths/);
+    assert.match(prompt, /Preserve table structure and cell count/);
+    assert.match(prompt, /Return only the translated Markdown/);
+  });
+
   test('translates Markdown sections and rebuilds the translated document', async () => {
     const translated = await translateMarkdownDocumentToChinese({
       sourceMarkdown: ['# Install', 'Install the extension.', '', '## Usage', 'Run the command.'].join('\n'),

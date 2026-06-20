@@ -13,6 +13,7 @@
   ],
   "activationEvents": [
     "onCommand:mdTranslate.previewChinese",
+    "onCommand:mdTranslate.previewChineseToSide",
     "onCommand:mdTranslate.clearCache",
     "onCommand:mdTranslate.clearCurrentFileCache"
   ],
@@ -27,6 +28,11 @@
           "light": "assets/translate-preview-light.svg",
           "dark": "assets/translate-preview-dark.svg"
         }
+      },
+      {
+        "command": "mdTranslate.previewChineseToSide",
+        "title": "Preview Markdown Translation in Chinese to Side",
+        "category": "Markdown Translate"
       },
       {
         "command": "mdTranslate.clearCache",
@@ -52,11 +58,21 @@
           "command": "mdTranslate.previewChinese",
           "when": "resourceLangId == markdown",
           "group": "navigation"
+        },
+        {
+          "command": "mdTranslate.previewChineseToSide",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
         }
       ],
       "explorer/context": [
         {
           "command": "mdTranslate.previewChinese",
+          "when": "resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation"
+        },
+        {
+          "command": "mdTranslate.previewChineseToSide",
           "when": "resourceExtname == .md || resourceExtname == .markdown",
           "group": "navigation"
         }

@@ -5,7 +5,7 @@ import { writeCachedMarkdownTranslation } from './cache/writeCachedMarkdownTrans
 import { readExtensionTranslationConfig } from './config/readExtensionTranslationConfig';
 import { isMarkdownDocumentUri } from './language/isMarkdownDocumentUri';
 import { MarkdownTranslationFileLogger } from './logging/MarkdownTranslationFileLogger';
-import { openTranslatedMarkdownPreview } from './preview/openTranslatedMarkdownPreview';
+import { openTranslatedMarkdownPreview, TranslatedMarkdownPreviewOpenMode } from './preview/openTranslatedMarkdownPreview';
 import { registerTranslatedMarkdownDocumentProvider } from './preview/registerTranslatedMarkdownDocumentProvider';
 import { translateMarkdownDocumentToChinese } from './translation/translateMarkdownDocumentToChinese';
 
@@ -15,7 +15,12 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(registerTranslatedMarkdownDocumentProvider(context));
   context.subscriptions.push(
     vscode.commands.registerCommand('mdTranslate.previewChinese', async (resourceUri?: vscode.Uri) => {
-      await previewActiveMarkdownDocumentInChinese(context, resourceUri, logger);
+      await previewActiveMarkdownDocumentInChinese(context, resourceUri, 'current', logger);
+    })
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('mdTranslate.previewChineseToSide', async (resourceUri?: vscode.Uri) => {
+      await previewActiveMarkdownDocumentInChinese(context, resourceUri, 'beside', logger);
     })
   );
   context.subscriptions.push(
@@ -49,6 +54,7 @@ export function deactivate(): void {
 async function previewActiveMarkdownDocumentInChinese(
   context: vscode.ExtensionContext,
   resourceUri: vscode.Uri | undefined,
+  openMode: TranslatedMarkdownPreviewOpenMode,
   logger: MarkdownTranslationFileLogger
 ): Promise<void> {
   const commandStartMs = Date.now();
@@ -94,7 +100,11 @@ async function previewActiveMarkdownDocumentInChinese(
           const previewStartMs = Date.now();
           await logger.info('preview.open.start');
           progress.report({ message: 'Opening preview' });
-          await openTranslatedMarkdownPreview(result.cacheKey);
+          await openTranslatedMarkdownPreview({
+            cacheKey: result.cacheKey,
+            sourceUri: sourceDocument.uri,
+            openMode
+          });
           await logger.info(`preview.open.end ms=${Date.now() - previewStartMs}`);
 
           return result;
