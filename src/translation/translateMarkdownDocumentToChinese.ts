@@ -11,7 +11,7 @@ import { rebuildMarkdownFromTranslatedSections } from '../markdown/rebuildMarkdo
 import { splitMarkdownIntoTranslatableSections } from '../markdown/splitMarkdownIntoTranslatableSections';
 import { translateMarkdownSectionToChinese } from './translateMarkdownSectionToChinese';
 
-export const markdownTranslationPromptVersion = 'v1';
+export const markdownTranslationPromptVersion = 'v2';
 export const markdownTranslationCacheSchemaVersion = 'v1';
 
 export interface TranslateMarkdownDocumentInput {

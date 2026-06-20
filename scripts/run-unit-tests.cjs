@@ -5,10 +5,11 @@ const Mocha = require('mocha');
 const originalLoad = Module._load;
 
 class TestUri {
-  constructor(scheme, authority, pathValue) {
+  constructor(scheme, authority, pathValue, query = '') {
     this.scheme = scheme;
     this.authority = authority;
     this.path = pathValue;
+    this.query = query;
   }
 
   static file(filePath) {
@@ -22,11 +23,12 @@ class TestUri {
   }
 
   static from(components) {
-    return new TestUri(components.scheme, components.authority ?? '', components.path ?? '/');
+    return new TestUri(components.scheme, components.authority ?? '', components.path ?? '/', components.query ?? '');
   }
 
   toString() {
-    return `${this.scheme}://${this.authority}${this.path}`;
+    const query = this.query ? `?${this.query}` : '';
+    return `${this.scheme}://${this.authority}${this.path}${query}`;
   }
 }
 
@@ -67,7 +69,7 @@ const mocha = new Mocha({
 });
 const testsRoot = path.resolve(__dirname, '..', 'out', 'test', 'suite');
 
-for (const testFile of ['language.test.js', 'markdown.test.js', 'cache.test.js', 'translation.test.js']) {
+for (const testFile of ['language.test.js', 'markdown.test.js', 'cache.test.js', 'translation.test.js', 'preview.test.js']) {
   mocha.addFile(path.join(testsRoot, testFile));
 }
 

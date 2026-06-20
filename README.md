@@ -55,7 +55,9 @@ The Markdown editor title includes this translation preview button:
 
 ![Translate preview icon](assets/translate-preview.svg)
 
-Use it to open a translated Chinese Markdown preview for the active Markdown document. The same command is also available from the command palette, editor context menu, and explorer context menu.
+Use it to open a translated Chinese Markdown preview for the active Markdown document in the current editor group. The same command is also available from the command palette, editor context menu, and explorer context menu.
+
+Use `Markdown Translate: Preview Markdown Translation in Chinese to Side` to open a locked translated preview beside the source Markdown document. Translated preview tabs use readable virtual names such as `README.zh.md` while the cache key remains stored outside the displayed path.
 
 ## Local Install
 Package and install the extension locally when you want to use it in normal VS Code windows instead of the Extension Development Host:
@@ -78,6 +80,8 @@ After installation, reload or reopen VS Code and configure `mdTranslate.*` setti
 Translation cache is stored under the VS Code extension `globalStorageUri` directory, not in the workspace, so normal translation preview usage does not affect Git status.
 
 Translation flow logs are stored under the same extension storage directory as `markdown-translate.log`. Logs include cache, chunking, LLM request timing, and preview timing, but do not include API keys, full Markdown source, prompts, or full model responses.
+
+The cache key includes the translation prompt version. Prompt upgrades intentionally create new cache entries so old translation output is not reused with newer translation rules.
 
 
 ## Manual Real Translation Test

@@ -4,11 +4,16 @@ import { MarkdownTranslationLogger } from '../logging/MarkdownTranslationFileLog
 
 export function buildMarkdownTranslationPrompt(targetLanguage: string): string {
   return [
-    'You are a Markdown document translator.',
-    `Translate the provided Markdown content into ${targetLanguage}.`,
-    'Preserve Markdown syntax, heading levels, tables, blockquotes, lists, links, image URLs, anchors, and code block placeholders.',
-    'Do not modify URLs or image paths.',
-    'Do not explain, summarize, or add extra commentary.',
+    'You are a professional technical documentation translator.',
+    `Translate the provided Markdown into ${targetLanguage}.`,
+    'Rules:',
+    '- Preserve Markdown structure exactly: heading levels, list nesting, table columns, blockquotes, front matter, anchors, links, image URLs, and placeholders.',
+    '- Translate prose naturally and accurately for technical documentation.',
+    '- Keep product names, API names, command names, file paths, package names, identifiers, environment variables, URLs, and inline code unchanged.',
+    '- Do not translate fenced code blocks or protected code block placeholders.',
+    '- Preserve Markdown links: translate visible link text when it is natural language, but never change URLs or anchors.',
+    '- Preserve table structure and cell count.',
+    '- Do not summarize, omit, expand, explain, or add commentary.',
     'Return only the translated Markdown.'
   ].join('\n');
 }
