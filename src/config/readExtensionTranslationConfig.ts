@@ -17,7 +17,7 @@ export function readExtensionTranslationConfig(): ExtensionTranslationConfig {
     apiKey: configuration.get<string>('apiKey', '').trim(),
     model: configuration.get<string>('model', '').trim(),
     targetLanguage: configuration.get<string>('targetLanguage', '简体中文').trim() || '简体中文',
-    maxSectionChars: configuration.get<number>('maxSectionChars', 30000),
+    maxSectionChars: configuration.get<number>('maxSectionChars', 1500),
     enableCache: configuration.get<boolean>('enableCache', true)
   };
 }

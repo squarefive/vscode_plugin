@@ -40,7 +40,10 @@ export async function callOpenAICompatibleChatCompletion(
       body: JSON.stringify({
         model: config.model,
         messages,
-        temperature: 0.2
+        temperature: 0.2,
+        thinking: {
+          type: 'disabled'
+        }
       }),
       signal: abortSignal
     });

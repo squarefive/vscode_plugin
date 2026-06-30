@@ -103,9 +103,9 @@
         },
         "mdTranslate.maxSectionChars": {
           "type": "number",
-          "default": 30000,
+          "default": 1500,
           "minimum": 1000,
-          "description": "Maximum Markdown characters before splitting translation requests."
+          "description": "Maximum Markdown characters before splitting translation requests by Markdown heading levels."
         },
         "mdTranslate.enableCache": {
           "type": "boolean",
