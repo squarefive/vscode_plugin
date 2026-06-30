@@ -69,7 +69,14 @@ const mocha = new Mocha({
 });
 const testsRoot = path.resolve(__dirname, '..', 'out', 'test', 'suite');
 
-for (const testFile of ['language.test.js', 'markdown.test.js', 'cache.test.js', 'translation.test.js', 'preview.test.js']) {
+for (const testFile of [
+  'language.test.js',
+  'markdown.test.js',
+  'cache.test.js',
+  'translation.test.js',
+  'preview.test.js',
+  'llm.test.js'
+]) {
   mocha.addFile(path.join(testsRoot, testFile));
 }
 

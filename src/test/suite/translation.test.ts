@@ -125,6 +125,45 @@ suite('Markdown translation orchestration', () => {
     assert.equal(translated.translatedMarkdown, '# 一\n第一段。\n\n# 二\n第二段。\n\n# 三\n第三段。');
   });
 
+  test('starts all split translations concurrently up to ten sections', async () => {
+    const pendingTranslations: Array<{
+      sectionMarkdown: string;
+      resolveTranslation: (translatedMarkdown: string) => void;
+    }> = [];
+    const translationPromise = translateMarkdownDocumentToChinese({
+      sourceMarkdown: Array.from({ length: 10 }, (_, index) =>
+        [`## Section ${index + 1}`, `Section ${index + 1} text. `.repeat(20), ''].join('\n')
+      ).join(''),
+      sourceUriText: 'file:///docs/readme.md',
+      config: {
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'secret',
+        model: 'example-model',
+        targetLanguage: '简体中文',
+        maxSectionChars: 1000,
+        enableCache: false
+      },
+      readCachedTranslation: async () => undefined,
+      writeCachedTranslation: async () => undefined,
+      translateMarkdownSection: async (sectionMarkdown) =>
+        new Promise<string>((resolveTranslation) => {
+          pendingTranslations.push({ sectionMarkdown, resolveTranslation });
+        })
+    });
+
+    await waitForPendingTranslations(pendingTranslations, 10);
+
+    pendingTranslations.forEach((pendingTranslation, index) => {
+      pendingTranslation.resolveTranslation(`## 第 ${index + 1} 节\n译文 ${index + 1}。`);
+    });
+
+    const translated = await translationPromise;
+
+    assert.equal(pendingTranslations.length, 10);
+    assert.match(translated.translatedMarkdown, /^## 第 1 节/);
+    assert.match(translated.translatedMarkdown, /## 第 10 节\n译文 10。$/);
+  });
+
   test('reports progress with one chunk for documents under the size boundary', async () => {
     const progressMessages: string[] = [];
 
@@ -179,6 +218,64 @@ suite('Markdown translation orchestration', () => {
 
     assert.deepEqual(progressMessages, ['Preparing 3 chunks', 'Translating 3 chunks']);
   });
+
+  test('reports progress with the actual split section count', async () => {
+    const progressMessages: string[] = [];
+
+    await translateMarkdownDocumentToChinese({
+      sourceMarkdown: [
+        '# Guide',
+        'Intro text.',
+        '',
+        createSecondLevelSection('One'),
+        createSecondLevelSection('Two'),
+        createSecondLevelSection('Three'),
+        createSecondLevelSection('Four')
+      ].join('\n'),
+      sourceUriText: 'file:///docs/readme.md',
+      config: {
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'secret',
+        model: 'example-model',
+        targetLanguage: '简体中文',
+        maxSectionChars: 1000,
+        enableCache: false
+      },
+      readCachedTranslation: async () => undefined,
+      writeCachedTranslation: async () => undefined,
+      translateMarkdownSection: async (sectionMarkdown) => sectionMarkdown,
+      reportProgress: (message) => progressMessages.push(message)
+    });
+
+    assert.deepEqual(progressMessages, ['Preparing 4 chunks', 'Translating 4 chunks']);
+  });
+
+  test('falls back to one translation call when heading split exceeds ten sections', async () => {
+    const sourceMarkdown = Array.from({ length: 11 }, (_, index) => createSecondLevelSection(`Section ${index + 1}`)).join('');
+    const translatedSections: string[] = [];
+
+    const translated = await translateMarkdownDocumentToChinese({
+      sourceMarkdown,
+      sourceUriText: 'file:///docs/readme.md',
+      config: {
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'secret',
+        model: 'example-model',
+        targetLanguage: '简体中文',
+        maxSectionChars: 1000,
+        enableCache: false
+      },
+      readCachedTranslation: async () => undefined,
+      writeCachedTranslation: async () => undefined,
+      translateMarkdownSection: async (sectionMarkdown) => {
+        translatedSections.push(sectionMarkdown);
+        return '# 整篇译文';
+      }
+    });
+
+    assert.deepEqual(translatedSections, [sourceMarkdown]);
+    assert.equal(translated.translatedMarkdown, '# 整篇译文');
+  });
 });
 
 async function waitForPendingTranslations(
@@ -199,4 +296,8 @@ async function waitForPendingTranslations(
 
     await new Promise((resolve) => setImmediate(resolve));
   }
+}
+
+function createSecondLevelSection(title: string): string {
+  return [`## ${title}`, `${title} text. `.repeat(80), ''].join('\n');
 }

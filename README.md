@@ -9,7 +9,7 @@ A local Visual Studio Code extension that helps preview non-Chinese Markdown doc
 - Call an LLM to translate Markdown content into Chinese.
 - Cache translated Markdown results to avoid repeated LLM calls for unchanged documents.
 - Preserve Markdown structure during translation.
-- Translate small and medium Markdown files as one request, while chunking oversized files into at most three concurrent requests.
+- Translate small Markdown files as one request, while splitting oversized files by Markdown heading levels.
 - Write translation flow logs outside the workspace for performance troubleshooting.
 
 ## Project Structure
@@ -39,12 +39,12 @@ A local Visual Studio Code extension that helps preview non-Chinese Markdown doc
      "mdTranslate.apiKey": "your-api-key",
      "mdTranslate.model": "deepseek-v4-flash",
      "mdTranslate.targetLanguage": "简体中文",
-     "mdTranslate.maxSectionChars": 30000,
+     "mdTranslate.maxSectionChars": 1500,
      "mdTranslate.enableCache": true
    }
    ```
 
-   `mdTranslate.maxSectionChars` defaults to `30000`. Documents at or below this size are translated as one request. Larger documents are chunked only by level-one Markdown headings and balanced into at most three concurrent translation requests.
+   `mdTranslate.maxSectionChars` defaults to `1500`. Documents at or below this size are translated as one request. Larger documents search heading levels from `#` through `######` and use the first level that creates multiple sections. If that level creates `2` through `10` sections, each section is translated separately and started concurrently. If it creates more than `10` sections, or no heading level can split the document, the whole document is translated as one request. DeepSeek thinking is disabled by default for lower-latency translation requests.
 
 3. Start the extension from VS Code with the `Run Extension` launch configuration.
 
